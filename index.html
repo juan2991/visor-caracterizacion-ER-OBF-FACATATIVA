@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visor territorial · Entidades religiosas de Facatativá </title>
+<link rel="stylesheet" href="lib/leaflet/leaflet.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'">
+<link rel="stylesheet" href="lib/markercluster/MarkerCluster.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'">
+<style>
+:root{--bg:#f6f4ee;--panel:#fffdf8;--line:#e3dfd2;--text:#2b2a26;--muted:#7a766a;--accent:#c0612b;--ink:#0f4c5c}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+#app{display:grid;grid-template-columns:300px 1fr 280px;grid-template-rows:auto 1fr;height:100%}
+header{grid-column:1/-1;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{font-size:17px;margin:0}header small{color:var(--muted)}
+.side{background:var(--panel);overflow:auto;padding:12px 14px;border-right:1px solid var(--line)}
+.side.r{border-right:0;border-left:1px solid var(--line)}
+main{position:relative;min-height:0}
+#map{position:absolute;inset:0}
+h2{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}h2:first-child{margin-top:0}
+input[type=text],select{width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text)}
+select{margin-bottom:6px}
+.chk{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px;cursor:pointer}
+.chk .ct{margin-left:auto;color:var(--muted);font-size:12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{flex:1;text-align:center;padding:8px 4px;font-size:13px;cursor:pointer;background:#fff}
+.seg input{display:none}.seg input:checked+span{font-weight:700;color:#fff}
+.seg label:has(input:checked){background:var(--ink);color:#fff}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 10px;cursor:pointer;width:100%;margin-top:10px}
+.btn:hover{border-color:var(--accent)}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.card .t{font-size:12px;color:var(--muted)}.card .big{font-size:30px;font-weight:700;color:var(--accent);line-height:1.15}
+.card .s{font-size:12px;color:var(--muted)}
+.bar{display:flex;align-items:center;gap:6px;font-size:12px;margin:3px 0;cursor:pointer;padding:1px 3px;border-radius:5px}
+.bar:hover{background:#f1ede2}.bar.on{background:#e8f1f3;outline:1px solid var(--ink)}
+.bar .l{width:96px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .b{height:11px;border-radius:3px;background:var(--accent);min-width:2px}.bar .v{color:var(--muted)}
+#legend{position:absolute;z-index:500;left:10px;bottom:22px;background:rgba(255,253,248,.95);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;max-width:220px}
+#legend .row{display:flex;align-items:center;gap:6px;margin:2px 0}#legend i{width:16px;height:12px;border:1px solid rgba(0,0,0,.15);display:inline-block}
+#legend .ln{width:18px;height:0;border-top:3px solid var(--ink);display:inline-block}
+.res{font-size:13px;margin-top:6px}.res div{padding:5px 6px;border-radius:6px;cursor:pointer}.res div:hover{background:#f1ede2}
+.pin{width:13px;height:13px;border-radius:50%;background:#fff;border:1.2px solid var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.4);display:grid;place-items:center;transform:scale(var(--s,1))}
+.pin.ver{border-color:#2f7d32;background:#eaf6e8}.pin svg{width:8px;height:8px;fill:var(--ink)}.mtl{width:20px;height:20px;border-radius:50%;background:#fff;border:2.5px solid #888;font:700 11px/15px system-ui,sans-serif;text-align:center;color:#2b2a26;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.pp b{font-size:14px}.pp div{font-size:13px;color:var(--muted);margin-top:2px}.pp .w{color:#b45309}
+.pp button{margin-top:8px;font:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--ink);background:#fff;color:var(--ink);border-radius:6px;cursor:pointer}
+.pin.obf{border-color:#7b3fa0;background:#f4ecfa;border-radius:3px}.pin.obf svg{fill:#7b3fa0}.pin.obf.ver{border-color:#7b3fa0;background:#f4ecfa}
+.pin.sel{box-shadow:0 0 0 2.5px rgba(192,97,43,.95);background:#fff3e8}
+/* sin el rectángulo negro de foco al hacer clic en un polígono */
+.leaflet-container .leaflet-interactive:focus,.leaflet-container path:focus,.leaflet-container svg:focus{outline:none}
+.mcl{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font:700 11px/22px system-ui,sans-serif;text-align:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.res .tg{float:right;font-size:11px;color:var(--muted)}.res .hd{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:6px 6px 2px;cursor:default}
+.share{margin-top:8px;font:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--ink);background:#fff;color:var(--ink);border-radius:6px;cursor:pointer}
+#fb .share{display:inline-block;width:auto}
+#err{padding:24px;max-width:560px;line-height:1.5}
+.leaflet-control-layers{font-size:13px}
+#lgb{display:none;position:absolute;z-index:560;left:10px;bottom:10px;width:auto;margin:0;padding:7px 12px;font-size:13px;border-radius:999px;box-shadow:0 1px 5px rgba(0,0,0,.3)}
+#fc{position:absolute;z-index:650;right:10px;bottom:26px;width:250px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.3);overflow:hidden}
+#fc[hidden],#lb[hidden]{display:none}
+#fcx{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.92);font-size:18px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3);z-index:2}
+#fph img{width:100%;height:170px;object-fit:cover;display:block;cursor:zoom-in;background:#ece8dc}
+#fph .nof{height:70px;display:grid;place-items:center;background:#f1ede2;color:var(--muted);font-size:13px}
+#fb{padding:10px 12px 12px}#fb b{font-size:14px;line-height:1.25;display:block;padding-right:6px}#fb div{font-size:13px;color:var(--muted);margin-top:3px}#fb .w{color:#b45309}
+#lb{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+#lb img{max-width:94vw;max-height:90vh;border-radius:6px}
+.nopt path{pointer-events:none!important}
+.axis{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin:4px 0 0 102px;font-size:11px;color:var(--muted)}.note{font-size:11px;color:var(--muted);line-height:1.4}
+#toggle{display:none}
+#icb{position:absolute;z-index:700;left:50%;top:10px;transform:translateX(-50%);width:auto;margin:0;padding:10px 18px;font-size:14px;font-weight:600;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.3);background:var(--ink);color:#fff;border-color:var(--ink);white-space:nowrap}
+#icb[aria-pressed=false]{background:#fff;color:var(--ink)}
+details{border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:6px}
+summary{padding:9px 10px;cursor:pointer;font-size:15px;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:'▾';color:var(--muted)}details[open] summary::after{content:'▴'}
+.ddp{padding:4px 10px 8px;border-top:1px solid var(--line);max-height:230px;overflow:auto}.ddl{font-size:12px;margin:4px 0}.ddl a{color:var(--ink);cursor:pointer;text-decoration:underline}
+#legend .mtg{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}#legend .mtg .row{cursor:pointer}
+@media(max-width:860px){
+ #fc{left:0;right:0;bottom:0;width:auto;border-radius:16px 16px 0 0;max-height:46vh;overflow:auto}#fph{min-height:120px}#fph img{height:120px}
+ #icb{top:8px;padding:8px 14px;font-size:13px}
+ #legend{display:none;bottom:44px;max-height:48vh;overflow:auto}#legend.open{display:block}
+ #lgb{display:block}
+ #app{display:block;height:auto}main{height:64vh}
+ .side{border:0;border-top:1px solid var(--line)}
+ .side.l{display:none}.side.l.open{display:block}#toggle{display:block;margin:8px 12px;width:calc(100% - 24px)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+ <header><h1>Visor territorial · Entidades religiosas de Facatativá</h1><small>Trazo urbano, microterritorios, barrios, denominación y tipo de entidad · Censo 2026</small></header>
+ <aside class="side l" id="left">
+  <label class="chk" style="font-weight:600"><input type="checkbox" id="icc" checked> Mostrar iconos de entidades</label>
+  <label class="chk"><input type="checkbox" id="clc" checked> Agrupar iconos al alejar el mapa</label>
+  <h2>Buscar entidad o barrio</h2>
+  <input type="text" id="q" placeholder="Nombre de la entidad o del barrio…"><div class="res" id="res"></div>
+
+  <h2>Unidad de análisis</h2>
+  <div class="seg"><label><input type="radio" name="unit" value="mt" checked><span>Microterritorios</span></label><label><input type="radio" name="unit" value="bar"><span>Barrios</span></label></div>
+  <label class="chk" style="margin-top:8px"><input type="checkbox" id="over" checked> Superponer límites de la otra unidad</label>
+
+  <h2>Colorear por</h2>
+  <select id="color"><option value="mt">Microterritorio (color propio)</option><option value="n">Número de entidades</option><option value="dens">Entidades por km²</option><option value="none">Sin color (solo límites)</option></select>
+
+  <h2>Filtros</h2>
+  <select id="fmt"></select>
+  <select id="fbar"></select>
+  <select id="ftipo"><option value="">Todos los tipos (ER y OBF)</option><option value="ER">Entidad religiosa (ER)</option><option value="OBF">Organización basada en la fe (OBF)</option></select>
+  <select id="fpers"><option value="">Personería jurídica: todas</option><option value="Sí">Con personería jurídica</option><option value="No">Sin personería jurídica</option><option value="En trámite">En trámite</option><option value="-">Sin dato</option></select>
+  <details id="dd"><summary id="ddt">Denominaciones</summary><div class="ddp"><div class="ddl"><a id="dda">Todas</a> · <a id="ddn">Ninguna</a></div><div id="dens"></div></div></details>
+  <button class="btn" id="reset">Restablecer filtros y vista</button>
+  <button class="btn" id="shareview">Copiar enlace de esta vista</button>
+ </aside>
+ <main><button class="btn" id="toggle">Mostrar / ocultar filtros</button><div id="map"><div id="err" hidden></div></div><button class="btn" id="icb" aria-pressed="true">◉ Ocultar iconos de entidades</button><button class="btn" id="lgb">Leyenda</button><div id="legend"></div>
+ <div id="fc" hidden><button id="fcx" aria-label="Cerrar ficha">×</button><div id="fph"></div><div id="fb"></div></div></main>
+ <div id="lb" hidden><img id="lbi" alt=""></div>
+ <aside class="side r">
+  <div class="card"><div class="t">Entidades en la selección</div><div class="big" id="k1">0</div><div class="s" id="k1s"></div></div>
+  <div class="card"><div class="t">Microterritorios con entidades</div><div class="big" id="k2">0</div><div class="s">de 13 microterritorios urbanos</div></div>
+  <div class="card"><div class="t">Densidad de la selección</div><div class="big" id="k3">0</div><div class="s" id="k3s"></div></div>
+  <div class="card"><div class="t">Mayor concentración</div><div class="big" id="k4" style="font-size:22px">–</div><div class="s" id="k4s"></div></div>
+  <div class="card"><div class="t" id="rt" style="margin-bottom:6px;font-weight:600;color:var(--text)">Entidades por microterritorio</div><div id="chmt"></div><div class="note" id="rn"></div></div>
+  <div class="card"><div class="t" style="margin-bottom:6px">Entidades por denominación</div><div id="chd"></div></div>
+  <p class="note">Las áreas se calculan sobre los polígonos digitales; los microterritorios se obtienen uniendo sus barrios y completando los espacios que quedan dentro del trazo urbano (calles, lotes sin barrio) con el microterritorio vecino más cercano, por lo que sus bordes son aproximados. Con pocas entidades por unidad, las densidades deben leerse con cautela.</p>
+ </aside>
+</div>
+<script>
+function loadJS(list,ok,fail){var i=0;(function next(){if(i>=list.length){if(fail)fail();return}var s=document.createElement('script');s.src=list[i++];s.onload=ok;s.onerror=next;document.head.appendChild(s)})()}
+function getJSON(names){return new Promise(function(res,rej){var i=0;(function next(){if(i>=names.length){rej(new Error(names[0]));return}fetch(names[i++]).then(function(r){if(!r.ok)throw 0;return r.json()}).then(res,next)})()})}
+function showErr(m){var e=document.getElementById('err');e.hidden=false;e.innerHTML=m}
+loadJS(['lib/leaflet/leaflet.js','leaflet.js','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'],function(){
+  loadJS(['lib/markercluster/leaflet.markercluster.js','leaflet.markercluster.js','https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js'],go,go)
+},function(){showErr('<b>No se pudo cargar el mapa.</b><br>Revisa que la carpeta <code>lib/</code> esté en el repositorio o que haya conexión a internet.')});
+function go(){
+  Promise.all([getJSON(['data/territorio.json','territorio.json']),getJSON(['data/entidades.json','entidades.json'])])
+   .then(function(a){var V=a[0];V.ch=a[1];app(V)})
+   .catch(function(){showErr('<b>No se pudieron leer los datos.</b><br>Si abriste el archivo haciendo doble clic, el navegador lo bloquea: publícalo en GitHub Pages o ábrelo con un servidor local (<code>python -m http.server</code> y luego <code>http://localhost:8000</code>).')})}
+function app(VIZ){
+(function(){
+if(typeof L==='undefined'){document.getElementById('map').innerHTML='<p style="padding:20px">No se pudo cargar el mapa (se requiere conexión a internet).</p>';return}
+var BAR=VIZ.bar,MT=VIZ.mt,CH=VIZ.ch,URB_KM2=VIZ.urb_km2;
+var INK='#0f4c5c',P5=['#fbe3cc','#f5be8c','#e9954f','#cf6a22','#963f0c'],ZERO='#efece3';
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
+function nz(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+var barBy={};BAR.forEach(function(f){barBy[f.properties.i]=f.properties});
+var mtBy={};MT.forEach(function(f){mtBy[f.properties.mt]=f.properties});
+
+var MTC={1:'#4e79a7',2:'#f28e2b',3:'#e15759',4:'#17becf',5:'#b07aa1',6:'#ff9da7',7:'#9c755f',8:'#edc948',9:'#6b6ecf',10:'#2f4b7c',11:'#d37295',12:'#a0cbe8',13:'#e377c2'},NOMT='#d4d0c4';
+var S={t:'',p:'',q:'',mt:0,b:-1,d:{},unit:'mt',color:'mt',over:true,icons:true,cl:true};
+function qok(c){return !S.q||nz(c.n).indexOf(nz(S.q))>=0}
+var dcount={};CH.forEach(function(c){dcount[c.d]=(dcount[c.d]||0)+1});
+var dl=Object.keys(dcount).sort(function(a,b){return dcount[b]-dcount[a]});
+dl.forEach(function(d){S.d[d]=true});
+
+/* ---------- mapa ---------- */
+var map=L.map('map');
+var calles=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}).addTo(map);
+var satel=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imágenes © Esri'});
+L.control.layers({'Mapa de calles':calles,'Satélite':satel},null,{position:'topright',collapsed:true}).addTo(map);
+L.control.scale({imperial:false,position:'bottomright'}).addTo(map);
+['mask','unit','ov','urb','lab'].forEach(function(n,i){map.createPane(n).style.zIndex=305+i*25});
+// máscara: atenúa lo que queda fuera del trazo urbano
+var urbG=L.geoJSON(VIZ.urb,{pane:'urb',interactive:false,style:{fill:false,color:INK,weight:3.5,opacity:1}});
+var rings=[[[-90,-180],[-90,180],[90,180],[90,-180]]];
+(VIZ.urb.geometry.type==='Polygon'?[VIZ.urb.geometry.coordinates]:VIZ.urb.geometry.coordinates).forEach(function(p){
+  rings.push(p[0].map(function(c){return[c[1],c[0]]}))});
+L.polygon(rings,{pane:'mask',interactive:false,stroke:false,fillColor:'#3f9142',fillOpacity:.30}).addTo(map);
+var halo=L.geoJSON(VIZ.urb,{pane:'urb',interactive:false,style:{fill:false,color:'#fff',weight:8,opacity:.85}}).addTo(map);
+urbG.addTo(map);
+var URB_B=urbG.getBounds();map.fitBounds(URB_B,{padding:[10,10]});
+function mkPts(){return(S.cl&&L.markerClusterGroup)?L.markerClusterGroup({disableClusteringAtZoom:14,maxClusterRadius:36,showCoverageOnHover:false,iconCreateFunction:function(c){return L.divIcon({html:'<div class="mcl">'+c.getChildCount()+'</div>',className:'',iconSize:[26,26]})}}):L.layerGroup()}
+var actL=null,ovL=null,lbL=null,pts=mkPts().addTo(map);
+
+/* ---------- datos derivados ---------- */
+function baseList(){return CH.filter(function(c){return S.d[c.d]&&(!S.t||c.t===S.t)&&(!S.p||(S.p==='-'?!c.p:c.p===S.p))&&qok(c)})}
+function spatialOk(c){return (!S.mt||c.mt===S.mt)&&(S.b<0||c.bi===S.b)}
+function counts(list){var cb={},cm={};list.forEach(function(c){if(c.bi>=0)cb[c.bi]=(cb[c.bi]||0)+1;if(c.mt)cm[c.mt]=(cm[c.mt]||0)+1});return{cb:cb,cm:cm}}
+var C={cb:{},cm:{}},BR=[];
+function unitVal(p){
+  var n=S.unit==='mt'?(C.cm[p.mt]||0):(C.cb[p.i]||0);
+  return S.color==='dens'?(p.km2>0?n/p.km2:0):n}
+function classify(){
+  var feats=S.unit==='mt'?MT:BAR,v=[];
+  feats.forEach(function(f){var x=unitVal(f.properties);if(x>0)v.push(x)});
+  v.sort(function(a,b){return a-b});
+  var q=function(p){return v.length?v[Math.min(v.length-1,Math.floor(p*v.length))]:0};
+  var b=[q(.25),q(.5),q(.75)].filter(function(x,i,a){return i===0||x>a[i-1]});
+  if(v.length&&b[0]>=v[v.length-1])b=[];
+  BR=b}
+function colorFor(x){
+  if(x<=0)return ZERO;
+  var k=BR.filter(function(b){return x>b}).length,m=BR.length;
+  return P5[m===0?3:Math.round(k*4/m)]}
+function unitSel(p){
+  if(S.mt===-1)return true;
+  if(S.unit==='mt')return S.b>=0?(barBy[S.b]&&barBy[S.b].mt===p.mt):(!S.mt||p.mt===S.mt);
+  return S.b>=0?p.i===S.b:(!S.mt||p.mt===S.mt)}
+function styleUnit(f){
+  var p=f.properties,sel=unitSel(p),dim=!sel,base=S.unit==='mt'?{c:'#4a463c',w:2}:{c:'#8a8473',w:1};
+  var fill=S.color==='none'?{col:'#c0612b',op:.06}:S.color==='mt'?{col:MTC[p.mt]||NOMT,op:.55}:{col:colorFor(unitVal(p)),op:.78};
+  var spot=(S.unit==='mt'&&S.mt===p.mt&&S.b<0)||(S.unit==='bar'&&S.b===p.i);
+  return{color:spot?INK:base.c,weight:spot?3.5:base.w,opacity:dim?.35:.95,fillColor:fill.col,fillOpacity:dim?fill.op*.2:fill.op}}
+
+function popUnit(p){
+  var n=S.unit==='mt'?(C.cm[p.mt]||0):(C.cb[p.i]||0),name=S.unit==='mt'?'Microterritorio '+p.mt:p.n;
+  var h='<div class="pp"><b>'+esc(name)+'</b>';
+  if(S.unit==='bar'&&p.mt)h+='<div>Microterritorio: '+p.mt+'</div>';
+  if(S.unit==='bar'&&p.af)h+='<div>Área funcional: '+esc(p.af)+'</div>';
+  if(S.unit==='mt')h+='<div>Barrios que lo componen: '+p.nb+'</div>';
+  h+='<div>Entidades: '+n+'</div><div>Área: '+p.km2.toFixed(3)+' km² · '+(p.km2>0?(n/p.km2).toFixed(1):'–')+' entidades/km²</div>';
+  h+='<button onclick="window.__pick('+(S.unit==='mt'?p.mt:p.i)+')">Filtrar a esta unidad</button></div>';
+  return h}
+
+function build(){
+  if(actL)map.removeLayer(actL);if(ovL)map.removeLayer(ovL);
+  var A=S.unit==='mt'?MT:BAR,O=S.unit==='mt'?BAR:MT;
+  actL=L.geoJSON({type:'FeatureCollection',features:A},{pane:'unit',style:styleUnit,onEachFeature:function(f,l){
+    l.bindPopup(function(){return popUnit(f.properties)});
+    l.bindTooltip(S.unit==='mt'?'Microterritorio '+f.properties.mt:f.properties.n,{sticky:true});
+    l.on('mouseover',function(){l.setStyle({weight:3})});
+    l.on('mouseout',function(){l.setStyle(styleUnit(f))})}}).addTo(map);
+  ovL=L.geoJSON({type:'FeatureCollection',features:O},{pane:'ov',interactive:false,
+    style:S.unit==='mt'?{fill:false,color:'#6f6a5c',weight:.8,opacity:.8}:{fill:false,color:'#2b2a26',weight:2.4,opacity:.9}});
+  if(S.over)ovL.addTo(map);
+  map.getPane('ov').classList.add('nopt');
+}
+var ICON_OBF='<div class="pin obf"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.800-8 11-8 11z"/></svg></div>';
+var ICON='<div class="pin"><svg viewBox="0 0 24 24"><path d="M12 1.5l2.4 3.6V8L19 10.6V21H14v-5h-4v5H5V10.6L9.6 8V5.1z"/></svg></div>';
+var markers=CH.map(function(c){
+  var m=L.marker([c.la,c.lo],{icon:L.divIcon({className:'',html:c.t==='OBF'?ICON_OBF:(c.mt===-1?ICON.replace('class="pin"','class="pin ver"'):ICON),iconSize:[13,13],iconAnchor:[7,7]})});
+  m._c=c;m.on('click',function(e){L.DomEvent.stopPropagation(e);showChurch(c,m)});return m});
+var sel=null,selM=null,DIRS=['fotos/',''],PHD=0;   // las fotos se buscan en fotos/ y, si no, junto a index.html
+function showChurch(c,m){
+  sel=c;selM=m;
+  var h='<b>'+esc(c.n)+'</b><div>'+esc(c.d)+(c.t?' · '+(c.t==='ER'?'Entidad religiosa':'Org. basada en la fe'):'')+'</div>'+(c.p?'<div>Personería jurídica: '+esc(c.p)+'</div>':'');
+  if(c.mt===-1)h+='<div>Zona veredal: '+esc(c.ver||'sin vereda indicada')+'</div><div class="w">Fuera del trazo urbano'+(/\d/.test(c.q)?' · a '+esc(c.q.replace(/[^0-9]/g,''))+' m del barrio más cercano':'')+'</div>';
+  else{
+    h+='<div>Barrio: '+esc(c.bn||c.bd)+(c.bn&&nz(c.bn)!==nz(c.bd)?' <span class="w">(registrado como «'+esc(c.bd)+'»)</span>':'')+'</div><div>Microterritorio: '+(c.mt||'sin asignar')+'</div>';
+    if(c.q!=='exacto')h+='<div class="w">Ubicación '+esc(c.q)+' respecto al polígono</div>'}
+  h+='<button class="share" id="shr">Copiar enlace a esta entidad</button>';
+  document.getElementById('fb').innerHTML=h;
+  document.getElementById('shr').onclick=function(){copyLink(this)};
+  var ph=document.getElementById('fph');
+  function nof(){ph.innerHTML='<div class="nof">Sin foto registrada</div>'}
+  if(c.ft){var im=new Image(),k=PHD;im.alt='Foto de '+c.n;
+    im.onload=function(){PHD=k};
+    im.onerror=function(){k=(k+1)%DIRS.length;if(++tries<DIRS.length)im.src=DIRS[k]+c.ft;else nof()};
+    im.onclick=function(){document.getElementById('lbi').src=im.src;document.getElementById('lb').hidden=false};
+    var tries=0;ph.innerHTML='';ph.appendChild(im);im.src=DIRS[k]+c.ft}else nof();
+  document.getElementById('fc').hidden=false;markSel();writeHash();
+  if(window.innerWidth<=860){var fc=document.getElementById('fc'),fh=fc.offsetHeight,pt=map.latLngToContainerPoint(m.getLatLng()),vis=map.getSize().y-fh;
+    if(pt.y>vis-24||pt.y<56)map.panBy([0,Math.round(pt.y-Math.max(vis/2,70))],{animate:false})}}
+function hideChurch(){sel=null;selM=null;document.getElementById('fc').hidden=true;markSel();writeHash()}
+function markSel(){
+  document.querySelectorAll('.pin.sel').forEach(function(e){e.classList.remove('sel')});
+  if(sel&&selM&&selM.getElement()){var p=selM.getElement().querySelector('.pin');if(p)p.classList.add('sel')}}
+
+/* ---------- actualización ---------- */
+function restyle(){
+  var base=baseList();C=counts(base);classify();
+  actL.setStyle(styleUnit);
+  var vis=base.filter(spatialOk);
+  pts.clearLayers();markers.forEach(function(m){if(vis.indexOf(m._c)>=0)pts.addLayer(m)});
+  if(sel&&vis.indexOf(sel)<0)hideChurch();else markSel();
+  cards(vis,base);charts(base);legend();results(vis);ddText();writeHash();
+}
+function legend(){
+  var lg=document.getElementById('legend'),u=S.unit==='mt'?'microterritorio':'barrio',h='<div class="row"><span class="ln"></span>Trazo urbano de Facatativá</div><div class="row"><i style="background:#9cc79a"></i>Fuera del trazo (zona veredal / no urbana)</div><div class="row"><i style="background:#fff;border:1.5px solid #0f4c5c;border-radius:50%"></i>Entidad religiosa (ER)</div><div class="row"><i style="background:#f4ecfa;border:1.5px solid #7b3fa0;border-radius:3px"></i>Organización basada en la fe (OBF)</div>';
+  if(S.color==='mt'){h+='<div style="margin:6px 0 2px"><b>Microterritorios</b> <span style="color:var(--muted)">(clic para filtrar)</span></div><div class="mtg">';for(var k=1;k<=13;k++)h+='<div class="row" data-m="'+k+'"><i style="background:'+MTC[k]+'"></i>'+k+'</div>';h+='</div>'}
+  if(S.color==='n'||S.color==='dens'){
+    var lab=S.color==='dens'?'Entidades por km²':'Número de entidades',f=function(x){return S.color==='dens'?x.toFixed(1):Math.round(x)};
+    h+='<div style="margin:6px 0 2px"><b>'+lab+'</b> por '+u+'</div><div class="row"><i style="background:'+ZERO+'"></i>0</div>';
+    var e=[0].concat(BR),mx=0;
+    (S.unit==='mt'?MT:BAR).forEach(function(x){mx=Math.max(mx,unitVal(x.properties))});
+    if(mx>0){e.forEach(function(lo,i){var hi=i<BR.length?BR[i]:mx,lbl=i===0?'> 0 – '+f(hi):'> '+f(lo)+' – '+f(hi);
+      h+='<div class="row"><i style="background:'+colorFor(lo+1e-9)+'"></i>'+lbl+'</div>'})}
+  }
+  lg.innerHTML=h;
+  lg.querySelectorAll('[data-m]').forEach(function(r){r.onclick=function(){var m=+r.getAttribute('data-m');setMt(S.mt===m?0:m)}})}
+function cards(vis,base){
+  document.getElementById('k1').textContent=vis.length;
+  var nv=vis.filter(function(c){return c.mt===-1}).length;
+  document.getElementById('k1s').textContent='de '+CH.length+' registradas'+(nv?' · '+nv+' en zona veredal':'');
+  var cm={};vis.forEach(function(c){if(c.mt>0)cm[c.mt]=(cm[c.mt]||0)+1});
+  var ks=Object.keys(cm);document.getElementById('k2').textContent=ks.length;
+  var area=URB_KM2,an='trazo urbano completo',nu=vis.length-nv;
+  if(S.mt===-1){area=0;an='zona veredal'}
+  else if(S.b>=0&&barBy[S.b]){area=barBy[S.b].km2;an=barBy[S.b].n}else if(S.mt>0&&mtBy[S.mt]){area=mtBy[S.mt].km2;an='microterritorio '+S.mt}
+  document.getElementById('k3').textContent=area>0?(nu/area).toFixed(1):'–';
+  document.getElementById('k3s').textContent=area>0?'entidades urbanas/km² · '+an+' ('+area.toFixed(2)+' km²)':'sin área definida para la zona veredal';
+  var top=ks.sort(function(a,b){return cm[b]-cm[a]})[0];
+  document.getElementById('k4').textContent=top?'Microterritorio '+top:'–';
+  document.getElementById('k4s').textContent=top?cm[top]+' de '+vis.length+' ('+Math.round(cm[top]/vis.length*100)+'%)':'Sin entidades en la selección'}
+function bars(el,rows,max,onClick,isOn){
+  var h='';rows.forEach(function(r){h+='<div class="bar'+(isOn(r.k)?' on':'')+'" data-k="'+esc(r.k)+'"><span class="l" title="'+esc(r.l)+'">'+esc(r.l)+'</span><span class="b" style="width:'+(max?r.v/max*90:0)+'px'+(r.c?';background:'+r.c:'')+'"></span><span class="v">'+r.v+'</span></div>'});
+  el.innerHTML=h||'<div class="note">Sin datos para esta selección</div>';
+  el.querySelectorAll('.bar').forEach(function(b){b.onclick=function(){onClick(b.getAttribute('data-k'))}})}
+function rankCtx(){return S.mt>0?S.mt:(S.b>=0&&barBy[S.b]?(barBy[S.b].mt||0):0)}
+function charts(base){
+  var m=rankCtx(),rows=[],title,note='',onClick,isOn;
+  if(m||S.b>=0){
+    var a=base.filter(function(c){return m?c.mt===m:true}),cb={};a.forEach(function(c){cb[c.bi]=(cb[c.bi]||0)+1});
+    var all=Object.keys(cb).map(function(k){return{k:k,l:+k>=0&&barBy[k]?barBy[k].n:'Sin barrio asignado',v:cb[k]}}).sort(function(x,y){return y.v-x.v});
+    rows=all.slice(0,10);
+    title=m?'Entidades por barrio · Microterritorio '+m:'Entidades por barrio';
+    var tot=m?BAR.filter(function(f){return f.properties.mt===m}).length:BAR.length,con=all.filter(function(r){return+r.k>=0}).length;
+    note=(all.length>10?'Se muestran los 10 primeros de '+all.length+'. ':'')+Math.max(0,tot-con)+' de '+tot+' barrios sin entidades registradas con la selección actual.';
+    onClick=function(k){if(+k<0)return;setBar(S.b===+k?-1:+k)};isOn=function(k){return S.b===+k};
+  }else{
+    var cm={};base.forEach(function(c){cm[c.mt]=(cm[c.mt]||0)+1});
+    rows=MT.map(function(f){var k=f.properties.mt;return{k:String(k),l:'Microterritorio '+k,v:cm[k]||0}});
+    if(cm[-1])rows.push({k:'-1',l:'Zona veredal',v:cm[-1],c:'#3f9142'});
+    rows.sort(function(x,y){return y.v-x.v});
+    title='Entidades por microterritorio';
+    note='Haz clic en una barra para filtrar. Al elegir un microterritorio, el ranking pasa a sus barrios.';
+    onClick=function(k){setMt(S.mt===+k?0:+k)};isOn=function(k){return S.mt===+k};
+  }
+  var mx=rows.length?rows[0].v:1;
+  document.getElementById('rt').textContent=title;document.getElementById('rn').textContent=note;
+  bars(document.getElementById('chmt'),rows,mx,onClick,isOn);
+  if(rows.length)document.getElementById('chmt').insertAdjacentHTML('beforeend','<div class="axis"><span>0</span><span>'+mx+'</span></div>');
+  var allc=CH.filter(function(c){return qok(c)&&spatialOk(c)}),cd={};allc.forEach(function(c){cd[c.d]=(cd[c.d]||0)+1});
+  var dr=Object.keys(cd).map(function(k){return{k:k,l:k,v:cd[k]}}).sort(function(x,y){return y.v-x.v});
+  var solo=dl.filter(function(d){return S.d[d]});
+  bars(document.getElementById('chd'),dr,dr.length?dr[0].v:1,function(k){
+    if(solo.length===1&&solo[0]===k)dl.forEach(function(d){S.d[d]=true});else dl.forEach(function(d){S.d[d]=(d===k)});syncDens();restyle()},function(k){return solo.length===1&&solo[0]===k})}
+function results(vis){
+  var el=document.getElementById('res');
+  if(!S.q){el.innerHTML='';return}
+  var h='';
+  if(vis.length){h+='<div class="hd">Entidades</div>'+vis.slice(0,8).map(function(c){return'<div data-i="'+CH.indexOf(c)+'">'+esc(c.n)+'<span class="tg">'+esc(c.bn||c.bd||'')+'</span></div>'}).join('')}
+  var q=nz(S.q),bs=BAR.map(function(f){return f.properties}).filter(function(p){return nz(p.n).indexOf(q)>=0}).slice(0,5);
+  if(bs.length)h+='<div class="hd">Barrios</div>'+bs.map(function(p){return'<div data-b="'+p.i+'">'+esc(p.n)+'<span class="tg">MT '+(p.mt||'–')+'</span></div>'}).join('');
+  el.innerHTML=h||'<div style="color:var(--muted);cursor:default">Sin coincidencias.</div>';
+  el.querySelectorAll('div[data-i]').forEach(function(d){d.onclick=function(){var m=markers[+d.getAttribute('data-i')];map.setView(m.getLatLng(),17,{animate:false});showChurch(m._c,m)}});
+  el.querySelectorAll('div[data-b]').forEach(function(d){d.onclick=function(){
+    var i=+d.getAttribute('data-b');S.q='';document.getElementById('q').value='';S.mt=0;document.getElementById('fmt').value='0';fillBarSel();setBar(i)}})}
+
+/* ---------- controles ---------- */
+function fitUnit(){
+  if(S.mt===-1){var vp=CH.filter(function(c){return c.mt===-1}).map(function(c){return[c.la,c.lo]});if(vp.length){map.fitBounds(L.latLngBounds(vp).extend(URB_B),{padding:[30,30],maxZoom:15});return}}
+  if(S.b>=0){var l=actL&&actL.getLayers().filter(function(x){return S.unit==='bar'&&x.feature.properties.i===S.b})[0];
+    if(l){map.fitBounds(l.getBounds(),{padding:[60,60],maxZoom:17});return}
+    var f=BAR.filter(function(x){return x.properties.i===S.b})[0];if(f){map.fitBounds(L.geoJSON(f).getBounds(),{padding:[60,60],maxZoom:17});return}}
+  if(S.mt){var g=L.geoJSON(MT.filter(function(x){return x.properties.mt===S.mt}));map.fitBounds(g.getBounds(),{padding:[40,40],maxZoom:17});return}
+  map.fitBounds(URB_B,{padding:[10,10]})}
+function fillBarSel(){
+  var fb=document.getElementById('fbar'),list=BAR.map(function(f){return f.properties}).filter(function(p){return S.mt<=0||p.mt===S.mt}).sort(function(a,b){return a.n.localeCompare(b.n,'es')});
+  fb.innerHTML='<option value="-1">Todos los barrios'+(S.mt>0?' del microterritorio '+S.mt:'')+'</option>'+list.map(function(p){return'<option value="'+p.i+'">'+esc(p.n)+'</option>'}).join('');
+  fb.value=String(S.b)}
+function setMt(m){S.mt=m;S.b=-1;document.getElementById('fmt').value=String(m);fillBarSel();restyle();fitUnit()}
+function setBar(i){S.b=i;if(i>=0&&barBy[i]&&barBy[i].mt&&!S.mt){S.mt=0}document.getElementById('fbar').value=String(i);restyle();fitUnit()}
+window.__pick=function(v){map.closePopup();if(S.unit==='mt')setMt(v);else{S.mt=0;document.getElementById('fmt').value='0';fillBarSel();setBar(v)}};
+function ddText(){var n=dl.filter(function(d){return S.d[d]}).length;document.getElementById('ddt').textContent='Denominaciones ('+n+' de '+dl.length+')'}
+function syncDens(){document.querySelectorAll('#dens input').forEach(function(i,ix){i.checked=!!S.d[dl[ix]]})}
+
+document.getElementById('fmt').innerHTML='<option value="0">Todos los microterritorios</option><option value="-1">Zona veredal (fuera del trazo urbano)</option>'+MT.map(function(f){return f.properties.mt}).sort(function(a,b){return a-b}).map(function(m){return'<option value="'+m+'">Microterritorio '+m+'</option>'}).join('');
+document.getElementById('fmt').onchange=function(){setMt(+this.value)};
+document.getElementById('ftipo').onchange=function(){S.t=this.value;hideChurch();restyle()};
+document.getElementById('fbar').onchange=function(){setBar(+this.value)};
+document.getElementById('fpers').onchange=function(){S.p=this.value;hideChurch();restyle()};
+document.getElementById('clc').onchange=function(){S.cl=this.checked;map.removeLayer(pts);pts=mkPts();if(S.icons)pts.addTo(map);restyle()};
+document.getElementById('dens').innerHTML=dl.map(function(d){return'<label class="chk"><input type="checkbox" checked>'+esc(d)+'<span class="ct">'+dcount[d]+'</span></label>'}).join('');
+document.querySelectorAll('#dens input').forEach(function(inp,ix){inp.onchange=function(){S.d[dl[ix]]=this.checked;restyle()}});
+document.getElementById('q').oninput=function(){S.q=this.value.trim();restyle()};
+document.getElementById('color').onchange=function(){S.color=this.value;restyle()};
+document.getElementById('over').onchange=function(){S.over=this.checked;if(S.over)ovL.addTo(map);else map.removeLayer(ovL)};
+document.querySelectorAll('input[name=unit]').forEach(function(r){r.onchange=function(){S.unit=this.value;build();restyle()}});
+document.getElementById('reset').onclick=function(){
+  S.t='';S.p='';document.getElementById('ftipo').value='';document.getElementById('fpers').value='';S.q='';S.mt=0;S.b=-1;dl.forEach(function(d){S.d[d]=true});
+  document.getElementById('q').value='';document.getElementById('fmt').value='0';fillBarSel();syncDens();hideChurch();restyle();map.closePopup();map.fitBounds(URB_B,{padding:[10,10]})};
+document.getElementById('dda').onclick=function(){dl.forEach(function(d){S.d[d]=true});syncDens();restyle()};
+document.getElementById('ddn').onclick=function(){dl.forEach(function(d){S.d[d]=false});syncDens();restyle()};
+function setIcons(on){
+  S.icons=on;var b=document.getElementById('icb');
+  b.setAttribute('aria-pressed',on);b.textContent=on?'◉ Ocultar iconos de entidades':'○ Mostrar iconos de entidades';
+  document.getElementById('icc').checked=on;
+  if(on)pts.addTo(map);else map.removeLayer(pts)}
+document.getElementById('icb').onclick=function(){setIcons(!S.icons)};
+document.getElementById('icc').onchange=function(){setIcons(this.checked)};
+function setScale(){var z=map.getZoom();map.getContainer().style.setProperty('--s',z<=13?.85:z===14?.95:z===15?1.05:z===16?1.2:1.35)}
+map.on('zoomend',setScale);setScale();
+document.getElementById('fcx').onclick=hideChurch;
+document.getElementById('lb').onclick=function(){this.hidden=true};
+map.on('click',hideChurch);
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){var lb=document.getElementById('lb');if(!lb.hidden)lb.hidden=true;else hideChurch()}});
+document.getElementById('toggle').onclick=function(){document.getElementById('left').classList.toggle('open')};
+
+/* ---------- enlace compartible (hash) ---------- */
+function writeHash(){
+  var p=new URLSearchParams();
+  if(sel)p.set('e',sel.id);
+  if(S.unit!=='mt')p.set('u',S.unit);
+  if(S.mt)p.set('mt',S.mt);
+  if(S.b>=0)p.set('b',S.b);
+  if(S.t)p.set('t',S.t);
+  if(S.p)p.set('p',S.p);
+  if(S.color!=='mt')p.set('c',S.color);
+  var h=p.toString();
+  try{history.replaceState(null,'',location.pathname+location.search+(h?'#'+h:''))}catch(e){}}
+function copyLink(btn){
+  writeHash();var url=location.href,t=btn.textContent;
+  function ok(){btn.textContent='✓ Enlace copiado';setTimeout(function(){btn.textContent=t},1800)}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(ok,function(){window.prompt('Copia este enlace:',url)});
+  else window.prompt('Copia este enlace:',url)}
+document.getElementById('shareview').onclick=function(){copyLink(this)};
+document.getElementById('lgb').onclick=function(){document.getElementById('legend').classList.toggle('open')};
+function readHash(){
+  var p=new URLSearchParams(location.hash.replace(/^#/,''));
+  if(p.get('u')==='bar'){S.unit='bar';document.querySelector('input[name=unit][value=bar]').checked=true}
+  if(p.get('c')){S.color=p.get('c');document.getElementById('color').value=S.color}
+  if(p.get('t')){S.t=p.get('t');document.getElementById('ftipo').value=S.t}
+  if(p.get('p')){S.p=p.get('p');document.getElementById('fpers').value=S.p}
+  if(p.get('mt'))S.mt=+p.get('mt');
+  if(p.get('b'))S.b=+p.get('b');
+  return p.get('e')}
+var eid=readHash();
+document.getElementById('fmt').value=String(S.mt);
+fillBarSel();build();restyle();
+if(eid){var mk=markers.filter(function(m){return m._c.id===eid})[0];if(mk){map.setView(mk.getLatLng(),17,{animate:false});showChurch(mk._c,mk)}}
+else if(S.mt||S.b>=0)fitUnit();
+if(/[?&]iconos=0/.test(location.search))setIcons(false);
+})();
+}
+</script>
+</body>
+</html>
